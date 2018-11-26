@@ -28,12 +28,9 @@ doSomething(function ($error, $value) {
 回调方式有几个缺点：
 
 - 传入回调函数以及根据第一个操作的结果做进一步操作会很快变得混乱。
-- 需要一个明确的回调函数作为方法的参数，并且回调函数的返回值未被使用过。没有回调函数就不能使用该API。
+- 需要一个明确的回调函数作为方法的参数，并且回调函数的返回值无法被使用。没有回调函数就不能使用该API。
 
-这正是promise发挥作用的地方。promise是简单的占位符，并且这些占位符
-
-That's where promises come into play.
-They're simple placeholders that are returned and allow a callback (or several callbacks) to be registered.
+这正是promise发挥作用的地方。promise是被返回的简单占位符，并且promise允许一个或多个回调函数注册进来。
 
 ```php
 doSomething()->onResolve(function ($error, $value) {
@@ -45,17 +42,11 @@ doSomething()->onResolve(function ($error, $value) {
 });
 ```
 
-This doesn't seem a lot better at first sight, we have just moved the callback.
-But in fact this enabled a lot.
-We can now write helper functions like [`Amp\Promise\all()`](https://amphp.org/amp/promises/combinators#all) which subscribe to several of those placeholders and combine them. We don't have to write any complicated code to combine the results of several callbacks.
+乍一眼看这样似乎并没有多大好处，我们只是调整了回调函数。但事实上已经做了很多事。我们现在可以编写像 [`Amp\Promise\all()`](https://amphp.org/amp/promises/combinators#all) 这样的辅助函数，函数订阅了几个promise占位符并将它们合并在一起。我们不需要去编写任何复杂的代码来合并处理几个回调函数的结果。
 
-But the most important improvement of promises is that they allow writing [coroutines](https://amphp.org/amp/coroutines/), which completely eliminate the need for _any_ callbacks.
+但是promise最重要的改进是它们允许用协程（[coroutines](https://amphp.org/amp/coroutines/)）来编写，完全不需要任何回到函数。
 
-Coroutines make use of PHP's generators.
-Every time a promise is `yield`ed, the coroutine subscribes to the promise and automatically continues it once the promise resolved.
-On successful resolution the coroutine will send the resolution value into the generator using [`Generator::send()`](https://secure.php.net/generator.send).
-On failure it will throw the exception into the generator using [`Generator::throw()`](https://secure.php.net/generator.throw).
-This allows writing asynchronous code almost like synchronous code.
+协程利用了PHP的生成器（generator）。每一次promise被yield返回，协程都会订阅promise，并且一旦promise被处理该协程会自动继续执行。当promise处理成功时，协程会使用[`Generator::send()`](https://secure.php.net/generator.send)发送处理结果到生成器中。当处理失败时，协程将会使用[`Generator::throw()`](https://secure.php.net/generator.throw)抛出异常到生成器中。这几乎像写同步代码一样来写异步代码。
 
 {:.note}
 > Amp's `Promise` interface **does not** conform to the "Thenables" abstraction common in JavaScript promise implementations. Chaining `.then()` calls is a suboptimal method for avoiding callback hell in a world with generator coroutines. Instead, Amp utilizes PHP generators as described above.
